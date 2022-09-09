@@ -9,6 +9,8 @@ export const renderInput = (elements, value, prevValue) => {
     elements.input.classList.remove('is-invalid');
     elements.input.classList.add('is-valid');
   }
+  elements.form.reset();
+  elements.form.focus();
 };
 
 export const renderInputFeedback = (elements, value, prevValue, i18n) => {
