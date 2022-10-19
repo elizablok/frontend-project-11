@@ -13,7 +13,8 @@ export default {
           invalidResource: 'Ресурс не содержит валидный RSS',
         },
       },
-      alerts: {
+      feedback: {
+        loading: 'Загружается',
         finished: 'RSS успешно загружен',
         crashed: 'Ошибка сети',
       },

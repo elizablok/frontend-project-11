@@ -1,4 +1,2 @@
 node_modules
 dist
-src/init.js
-src/utils/views.js

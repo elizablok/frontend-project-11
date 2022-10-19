@@ -1,39 +1,6 @@
-import { isEmpty } from 'lodash';
+import { isEmpty, last } from 'lodash';
 
-export const renderInput = (elements, value, prevValue) => {
-  if (!value) {
-    if (prevValue || prevValue === null) {
-      elements.input.classList.add('is-invalid');
-    }
-  } else if (value && !prevValue) {
-    elements.input.classList.remove('is-invalid');
-    elements.input.classList.add('is-valid');
-  }
-  elements.form.reset();
-  elements.form.focus();
-};
-
-export const renderInputFeedback = (elements, value, prevValue, i18n) => {
-  if (!isEmpty(value)) {
-    if (prevValue === null) {
-      elements.feedback.classList.add('text-danger');
-    } else if (isEmpty(prevValue)) {
-      elements.feedback.classList.remove('text-success');
-      elements.feedback.classList.add('text-danger');
-    }
-    elements.feedback.textContent = value.url.errors.join('. ');
-  } else if (isEmpty(value)) {
-    if (prevValue === null) {
-      elements.feedback.classList.add('text-success');
-    } else if (!isEmpty(prevValue)) {
-      elements.feedback.classList.remove('text-danger');
-      elements.feedback.classList.add('text-success');
-    }
-    elements.feedback.textContent = i18n.t('form.alerts.finished');
-  }
-};
-
-const renderPost = (post, elements) => {
+const openModal = (post, elements) => {
   elements.body.classList.add('modal-open');
   elements.body.setAttribute('style', 'overflow: hidden; padding-right: 15px;');
 
@@ -50,26 +17,66 @@ const renderPost = (post, elements) => {
   elements.modalTitle.textContent = post.title;
   elements.modalBody.innerHTML = post.description;
   elements.readinFullButton.setAttribute('href', post.link);
-
-  [...elements.closeButtons, elements.modal].forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      if ([...e.target.classList].includes('modal') || e.target.dataset.bsDismiss) {
-        elements.body.classList.remove('modal-open');
-        elements.body.removeAttribute('style');
-
-        elements.modal.classList.remove('show');
-        elements.modal.style = 'display: none;';
-        elements.modal.removeAttribute('aria-modal');
-        elements.modal.setAttribute('aria-hidden', 'true');
-        elements.modal.removeAttribute('role');
-
-        elements.body.removeChild(backDrop);
-      }
-    });
-  });
 };
 
-export const renderPosts = (posts, elements, i18n) => {
+const closeModal = (elements) => {
+  elements.body.classList.remove('modal-open');
+  elements.body.removeAttribute('style');
+
+  elements.modal.classList.remove('show');
+  elements.modal.style = 'display: none;';
+  elements.modal.removeAttribute('aria-modal');
+  elements.modal.setAttribute('aria-hidden', 'true');
+  elements.modal.removeAttribute('role');
+
+  const backDrop = document.querySelector('.modal-backdrop');
+  elements.body.removeChild(backDrop);
+};
+
+const clearInputField = (elements) => {
+  const { input, feedback } = elements;
+  input.classList.remove('is-valid', 'is-invalid');
+  feedback.classList.remove('text-success', 'text-danger', 'text-warning');
+  feedback.textContent = '';
+};
+
+const showInvalidInputField = (elements) => {
+  const { input, feedback } = elements;
+  clearInputField(elements);
+  input.classList.add('is-invalid');
+  feedback.classList.add('text-danger');
+};
+
+const showValidInputField = (elements, i18n) => {
+  const { form, feedback, input } = elements;
+  clearInputField(elements);
+  form.reset();
+  input.focus();
+  input.classList.add('is-valid');
+  feedback.classList.add('text-success');
+  feedback.textContent = i18n.t('form.feedback.finished');
+};
+
+const showProcessingInputField = (elements, i18n) => {
+  const { feedback } = elements;
+  clearInputField(elements);
+  feedback.classList.add('text-warning', 'm-0', 'small', 'feedback');
+  feedback.textContent = i18n.t('form.feedback.loading');
+};
+
+const blockUI = (elements) => {
+  const { input, submitButton } = elements;
+  submitButton.setAttribute('disabled', 'disabled');
+  input.readOnly = true;
+};
+
+const unblockUI = (elements) => {
+  const { submitButton, input } = elements;
+  submitButton.disabled = false;
+  input.readOnly = false;
+};
+
+const renderPosts = (posts, elements, i18n) => {
   const card = document.createElement('div');
   card.classList.add('card', 'border-0');
   elements.postsContainer.replaceChildren(card);
@@ -101,14 +108,6 @@ export const renderPosts = (posts, elements, i18n) => {
     seeButton.dataset.bsToggle = 'modal';
     seeButton.dataset.bsTarget = '#modal';
     seeButton.textContent = i18n.t('buttons.see');
-    seeButton.addEventListener('click', (e) => {
-      renderPost(post, elements, i18n);
-      const postA = e.target.closest('li').querySelector('a');
-      if ([...postA.classList].includes('fw-bold')) {
-        postA.classList.remove('fw-bold');
-        postA.classList.add('fw-normal');
-      }
-    });
     li.append(a, seeButton);
     postsList.append(li);
   });
@@ -116,7 +115,7 @@ export const renderPosts = (posts, elements, i18n) => {
   card.append(cardBody, postsList);
 };
 
-export const renderFeeds = (feeds, elements, i18n) => {
+const renderFeeds = (feeds, elements, i18n) => {
   const feedsCard = document.createElement('div');
   feedsCard.classList.add('card', 'border-0');
   elements.feedsContainer.replaceChildren(feedsCard);
@@ -145,4 +144,74 @@ export const renderFeeds = (feeds, elements, i18n) => {
   });
 
   feedsCard.append(feedsCardBody, feedsList);
+};
+
+const renderErrors = (errors, elements, i18n) => {
+  if (!isEmpty(errors)) {
+    const { feedback } = elements;
+    feedback.textContent = errors.url.errors.map((message) => i18n.t(message)).join('. ');
+  }
+};
+
+const renderValidation = (validationState, elements) => {
+  switch (validationState) {
+    case 'valid':
+      break;
+    case 'invalid':
+      unblockUI(elements);
+      showInvalidInputField(elements);
+      break;
+    case 'processing':
+      clearInputField(elements);
+      blockUI(elements);
+      break;
+    default:
+      unblockUI(elements);
+      clearInputField(elements);
+      throw new Error(`Unexpected state: ${validationState}`);
+  }
+};
+
+const renderLoading = (loadingState, elements, i18n) => {
+  switch (loadingState) {
+    case 'processing':
+      showProcessingInputField(elements, i18n);
+      break;
+    case 'failed':
+      unblockUI(elements);
+      showInvalidInputField(elements);
+      break;
+    case 'successful':
+      unblockUI(elements);
+      showValidInputField(elements, i18n);
+      break;
+    default:
+      unblockUI(elements);
+      clearInputField(elements);
+      throw new Error(`Unexpected state mode: ${loadingState}`);
+  }
+};
+
+const renderModal = (modals, elements) => {
+  if (modals.isOn) {
+    openModal(modals.activePost, elements);
+    const postA = elements.postsContainer.querySelector(`a[data-id="${modals.activePost.id}"]`);
+    if ([...postA.classList].includes('fw-bold')) {
+      postA.classList.remove('fw-bold');
+      postA.classList.add('fw-normal');
+    }
+  } else {
+    closeModal(elements);
+  }
+};
+
+const renderSeenPosts = (seenPosts, elements) => {
+  const post = last(seenPosts);
+  const postA = elements.postsContainer.querySelector(`a[data-id="${post.id}"]`);
+  postA.classList.add('fw-normal');
+};
+
+export {
+  renderValidation, renderLoading, renderErrors,
+  renderFeeds, renderPosts, renderModal, renderSeenPosts,
 };
