@@ -1,4 +1,17 @@
 import { isEmpty, last } from 'lodash';
+import { mappingFormState, mappingLoadingState, mappingModalState } from './mappingStates.js';
+
+const blockUI = (elements) => {
+  const { input, submitButton } = elements;
+  submitButton.setAttribute('disabled', 'disabled');
+  input.readOnly = true;
+};
+
+const unblockUI = (elements) => {
+  const { submitButton, input } = elements;
+  submitButton.disabled = false;
+  input.readOnly = false;
+};
 
 const openModal = (post, elements) => {
   elements.body.classList.add('modal-open');
@@ -41,42 +54,34 @@ const clearInputField = (elements) => {
 };
 
 const showInvalidInputField = (elements) => {
-  const { input, feedback } = elements;
   clearInputField(elements);
+  const { input, feedback } = elements;
   input.classList.add('is-invalid');
   feedback.classList.add('text-danger');
 };
 
 const showValidInputField = (elements, i18n) => {
-  const { form, feedback, input } = elements;
   clearInputField(elements);
-  form.reset();
-  input.focus();
+  const { feedback, input } = elements;
   input.classList.add('is-valid');
   feedback.classList.add('text-success');
-  feedback.textContent = i18n.t('form.feedback.finished');
+  feedback.textContent = i18n.t('loading.feedback.success');
 };
 
-const showProcessingInputField = (elements, i18n) => {
-  const { feedback } = elements;
-  clearInputField(elements);
-  feedback.classList.add('text-warning', 'm-0', 'small', 'feedback');
-  feedback.textContent = i18n.t('form.feedback.loading');
+const showProcessingInputField = (stateType, elements, i18n = null) => {
+  if (stateType === 'form') {
+    const { form, input } = elements;
+    unblockUI(elements);
+    form.reset();
+    input.focus();
+  } else if (stateType === 'loading') {
+    const { feedback } = elements;
+    feedback.classList.add('text-warning');
+    feedback.textContent = i18n.t('loading.feedback.process');
+  }
 };
 
-const blockUI = (elements) => {
-  const { input, submitButton } = elements;
-  submitButton.setAttribute('disabled', 'disabled');
-  input.readOnly = true;
-};
-
-const unblockUI = (elements) => {
-  const { submitButton, input } = elements;
-  submitButton.disabled = false;
-  input.readOnly = false;
-};
-
-const renderPosts = (posts, elements, i18n) => {
+const renderPosts = (posts, seenPostsIds, elements, i18n) => {
   const card = document.createElement('div');
   card.classList.add('card', 'border-0');
   elements.postsContainer.replaceChildren(card);
@@ -86,7 +91,7 @@ const renderPosts = (posts, elements, i18n) => {
 
   const cardTitle = document.createElement('h4');
   cardTitle.classList.add('card-title', 'h4');
-  cardTitle.textContent = i18n.t('views.posts');
+  cardTitle.textContent = i18n.t('views.posts.title');
   cardBody.append(cardTitle);
 
   const postsList = document.createElement('ul');
@@ -95,7 +100,8 @@ const renderPosts = (posts, elements, i18n) => {
     const li = document.createElement('li');
     li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
     const a = document.createElement('a');
-    a.classList.add('fw-bold');
+    const fontClass = `fw-${seenPostsIds.includes(post.id) ? 'normal' : 'bold'}`;
+    a.classList.add(fontClass);
     a.dataset.id = post.id;
     a.setAttribute('href', post.link);
     a.setAttribute('target', '_blank');
@@ -107,7 +113,7 @@ const renderPosts = (posts, elements, i18n) => {
     seeButton.dataset.id = post.id;
     seeButton.dataset.bsToggle = 'modal';
     seeButton.dataset.bsTarget = '#modal';
-    seeButton.textContent = i18n.t('buttons.see');
+    seeButton.textContent = i18n.t('views.posts.buttons.see');
     li.append(a, seeButton);
     postsList.append(li);
   });
@@ -125,7 +131,7 @@ const renderFeeds = (feeds, elements, i18n) => {
 
   const feedsCardTitle = document.createElement('h4');
   feedsCardTitle.classList.add('card-title', 'h4');
-  feedsCardTitle.textContent = i18n.t('views.feeds');
+  feedsCardTitle.textContent = i18n.t('views.feeds.title');
   feedsCardBody.append(feedsCardTitle);
 
   const feedsList = document.createElement('ul');
@@ -146,43 +152,44 @@ const renderFeeds = (feeds, elements, i18n) => {
   feedsCard.append(feedsCardBody, feedsList);
 };
 
-const renderErrors = (errors, elements, i18n) => {
-  if (!isEmpty(errors)) {
+const renderError = (error, elements, i18n) => {
+  console.log(error, !isEmpty(error), i18n.t(error));
+  if (!isEmpty(error)) {
     const { feedback } = elements;
-    feedback.textContent = errors.url.errors.map((message) => i18n.t(message)).join('. ');
+    feedback.textContent = i18n.t(error);
   }
 };
 
-const renderValidation = (validationState, elements) => {
-  switch (validationState) {
-    case 'valid':
+const renderForm = (formState, elements) => {
+  switch (formState) {
+    case mappingFormState.valid:
       break;
-    case 'invalid':
-      unblockUI(elements);
+    case mappingFormState.invalid:
       showInvalidInputField(elements);
       break;
-    case 'processing':
+    case mappingFormState.processing:
       clearInputField(elements);
       blockUI(elements);
+      break;
+    case mappingFormState.filling:
+      showProcessingInputField('form', elements);
       break;
     default:
       unblockUI(elements);
       clearInputField(elements);
-      throw new Error(`Unexpected state: ${validationState}`);
+      throw new Error(`Unexpected state: ${formState}`);
   }
 };
 
 const renderLoading = (loadingState, elements, i18n) => {
   switch (loadingState) {
-    case 'processing':
-      showProcessingInputField(elements, i18n);
+    case mappingLoadingState.processing:
+      showProcessingInputField('loading', elements, i18n);
       break;
-    case 'failed':
-      unblockUI(elements);
+    case mappingLoadingState.failed:
       showInvalidInputField(elements);
       break;
-    case 'successful':
-      unblockUI(elements);
+    case mappingLoadingState.done:
       showValidInputField(elements, i18n);
       break;
     default:
@@ -193,25 +200,21 @@ const renderLoading = (loadingState, elements, i18n) => {
 };
 
 const renderModal = (modals, elements) => {
-  if (modals.isOn) {
+  if (modals.state === mappingModalState.open) {
     openModal(modals.activePost, elements);
-    const postA = elements.postsContainer.querySelector(`a[data-id="${modals.activePost.id}"]`);
-    if ([...postA.classList].includes('fw-bold')) {
-      postA.classList.remove('fw-bold');
-      postA.classList.add('fw-normal');
-    }
-  } else {
+  } else if (modals.state === mappingModalState.closed) {
     closeModal(elements);
   }
 };
 
-const renderSeenPosts = (seenPosts, elements) => {
-  const post = last(seenPosts);
-  const postA = elements.postsContainer.querySelector(`a[data-id="${post.id}"]`);
+const renderSeenPost = (seenPostsIds, elements) => {
+  const postId = last(seenPostsIds);
+  const postA = elements.postsContainer.querySelector(`a[data-id="${postId}"]`);
+  postA.classList.remove('fw-bold');
   postA.classList.add('fw-normal');
 };
 
 export {
-  renderValidation, renderLoading, renderErrors,
-  renderFeeds, renderPosts, renderModal, renderSeenPosts,
+  renderForm, renderLoading, renderError,
+  renderFeeds, renderPosts, renderModal, renderSeenPost,
 };

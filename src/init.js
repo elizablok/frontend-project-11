@@ -1,9 +1,10 @@
 import i18next from 'i18next';
-import ru from './locales/ru.js';
+import * as yup from 'yup';
+import resources from './locales/index.js';
 import watch from './utils/watcher.js';
 import validate from './utils/validator.js';
-import { mappingValidationState } from './utils/mappingStates.js';
-import { handleError } from './utils/cathers.js';
+import { mappingLoadingState, mappingFormState, mappingModalState } from './utils/mappingStates.js';
+import handleError from './utils/cathers.js';
 import { updatePosts, updatePostsByTimer } from './utils/updaters.js';
 
 const runApp = (state, elements) => {
@@ -11,26 +12,32 @@ const runApp = (state, elements) => {
     e.preventDefault();
 
     const formData = new FormData(e.target);
-    const urlsList = state.rssForm.feeds.map(({ url }) => url);
+    const urlsList = state.data.feeds.map(({ url }) => url);
 
-    state.rssForm.validationState = mappingValidationState.processing;
+    state.form.state = mappingFormState.processing;
 
     validate(Object.fromEntries(formData), urlsList)
       .then(() => {
-        state.rssForm.validationState = mappingValidationState.valid;
-        state.rssForm.errors = {};
+        state.form.state = mappingFormState.valid;
+        state.form.error = null;
 
         updatePosts(state, formData.get('url'));
       })
-      .catch((err) => handleError(err, state));
+      .catch((err) => {
+        state.form.state = mappingFormState.invalid;
+        handleError(err, state);
+      })
+      .finally(() => {
+        state.form.state = mappingFormState.filling;
+      });
     updatePostsByTimer(state);
   });
 
   [...elements.closeButtons, elements.modal].forEach((btn) => {
     btn.addEventListener('click', (e) => {
       if ([...e.target.classList].includes('modal') || e.target.dataset.bsDismiss) {
-        state.rssForm.ui.modal = {
-          isOn: false,
+        state.ui.modal = {
+          state: mappingModalState.closed,
           activePost: null,
         };
       }
@@ -41,44 +48,57 @@ const runApp = (state, elements) => {
     const postButton = e.target;
     const postId = postButton.dataset.id;
     if (!postId) return;
-    const activePost = state.rssForm.posts.find(({ id }) => id === postId);
+    const activePost = state.data.posts.find(({ id }) => id === postId);
 
-    state.rssForm.ui.modal = {
-      isOn: true,
+    state.ui.modal = {
+      state: mappingModalState.open,
       activePost,
     };
 
-    const { seenPostsIds } = state.rssForm.ui;
+    const { seenPostsIds } = state.ui;
     if (!seenPostsIds.includes(postId)) {
-      state.rssForm.ui.seenPostsIds.push(postId);
+      state.ui.seenPostsIds.push(postId);
     }
   });
 };
 
 export default () => {
+  yup.setLocale({
+    string: {
+      url: 'form.errors.invalidUrl',
+    },
+    mixed: {
+      required: 'form.errors.required',
+      notOneOf: 'form.errors.alreadyExists',
+    },
+  });
+
   const i18nInstance = i18next.createInstance();
   return i18nInstance.init({
     lng: 'ru',
     debug: false,
-    resources: {
-      ru,
-    },
+    resources,
   })
     .then(() => {
       const state = {
-        rssForm: {
-          validationState: null,
-          loadingState: null,
-          ui: {
-            seenPostsIds: [],
-            modal: {
-              isOn: false,
-              activePost: null,
-            },
-          },
+        data: {
           feeds: [],
           posts: [],
-          errors: {},
+        },
+        form: {
+          state: mappingFormState.initial,
+          error: null,
+        },
+        loading: {
+          error: null,
+          state: mappingLoadingState.initial,
+        },
+        ui: {
+          seenPostsIds: [],
+          modal: {
+            state: mappingModalState.initial,
+            activePost: null,
+          },
         },
       };
 

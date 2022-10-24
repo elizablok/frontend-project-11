@@ -1,37 +1,38 @@
 import onChange from 'on-change';
 import {
-  renderValidation, renderLoading, renderErrors,
-  renderFeeds, renderPosts, renderModal, renderSeenPosts,
+  renderForm, renderLoading, renderError,
+  renderFeeds, renderPosts, renderModal, renderSeenPost,
 } from './views.js';
 
 export default (state, elements, i18n) => onChange(state, (path, value) => {
   switch (path) {
-    case 'rssForm.validationState':
-      renderValidation(value, elements);
+    case 'form.state':
+      renderForm(value, elements);
       break;
 
-    case 'rssForm.loadingState':
+    case 'loading.state':
       renderLoading(value, elements, i18n);
       break;
 
-    case 'rssForm.errors':
-      renderErrors(value, elements, i18n);
+    case 'form.error':
+    case 'loading.error':
+      renderError(value, elements, i18n);
       break;
 
-    case 'rssForm.feeds':
+    case 'data.feeds':
       renderFeeds(value, elements, i18n);
       break;
 
-    case 'rssForm.posts':
-      renderPosts(value, elements, i18n);
+    case 'data.posts':
+      renderPosts(value, state.ui.seenPostsIds, elements, i18n);
       break;
 
-    case 'rssForm.modal':
+    case 'ui.modal':
       renderModal(value, elements);
       break;
 
-    case 'rssForm.seenPostsIds':
-      renderSeenPosts(value, elements);
+    case 'ui.seenPostsIds':
+      renderSeenPost(value, elements);
       break;
 
     default:

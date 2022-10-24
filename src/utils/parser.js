@@ -3,7 +3,7 @@ export default (data) => {
   const parseError = dom.querySelector('parsererror');
   if (parseError) {
     const error = new Error('ParseError');
-    error.invalidRss = true;
+    error.isInvalidRss = true;
     throw error;
   }
 
