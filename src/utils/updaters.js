@@ -35,8 +35,8 @@ const updatePosts = (state, url) => {
       state.loading.state = mappingLoadingState.done;
     })
     .catch((e) => {
-      state.loading.state = mappingLoadingState.failed;
       handleError(e, state);
+      state.loading.state = mappingLoadingState.failed;
     })
     .finally(() => {
       state.form.state = mappingFormState.filling;
@@ -62,7 +62,7 @@ const updatePostsByTimer = (state) => {
       .catch((e) => console.log(e));
   });
   Promise.all(promises)
-    .finally(setTimeout(updatePostsByTimer, 5000, state));
+    .finally(() => setTimeout(() => updatePostsByTimer(state), 5000));
 };
 
 export { updatePosts, updatePostsByTimer };

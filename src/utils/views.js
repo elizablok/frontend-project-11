@@ -23,10 +23,6 @@ const openModal = (post, elements) => {
   elements.modal.setAttribute('aria-modal', 'true');
   elements.modal.setAttribute('role', 'dialog');
 
-  const backDrop = document.createElement('div');
-  backDrop.classList.add('modal-backdrop', 'fade', 'show');
-  elements.body.append(backDrop);
-
   elements.modalTitle.textContent = post.title;
   elements.modalBody.innerHTML = post.description;
   elements.readinFullButton.setAttribute('href', post.link);
@@ -41,9 +37,6 @@ const closeModal = (elements) => {
   elements.modal.removeAttribute('aria-modal');
   elements.modal.setAttribute('aria-hidden', 'true');
   elements.modal.removeAttribute('role');
-
-  const backDrop = document.querySelector('.modal-backdrop');
-  elements.body.removeChild(backDrop);
 };
 
 const clearInputField = (elements) => {
@@ -53,32 +46,35 @@ const clearInputField = (elements) => {
   feedback.textContent = '';
 };
 
-const showInvalidInputField = (elements) => {
-  clearInputField(elements);
+const showInvalidInputField = (error, elements, i18n) => {
   const { input, feedback } = elements;
+  clearInputField(elements);
   input.classList.add('is-invalid');
   feedback.classList.add('text-danger');
+  if (!isEmpty(error)) {
+    feedback.textContent = i18n.t(error);
+  }
 };
 
 const showValidInputField = (elements, i18n) => {
-  clearInputField(elements);
   const { feedback, input } = elements;
+  clearInputField(elements);
   input.classList.add('is-valid');
   feedback.classList.add('text-success');
   feedback.textContent = i18n.t('loading.feedback.success');
+  input.value = '';
 };
 
-const showProcessingInputField = (stateType, elements, i18n = null) => {
-  if (stateType === 'form') {
-    const { form, input } = elements;
-    unblockUI(elements);
-    form.reset();
-    input.focus();
-  } else if (stateType === 'loading') {
-    const { feedback } = elements;
-    feedback.classList.add('text-warning');
-    feedback.textContent = i18n.t('loading.feedback.process');
-  }
+const showFillingInputField = (elements) => {
+  const { input } = elements;
+  unblockUI(elements);
+  input.focus();
+};
+
+const showLoadingInputField = (elements, i18n) => {
+  const { feedback } = elements;
+  feedback.classList.add('text-warning');
+  feedback.textContent = i18n.t('loading.feedback.process');
 };
 
 const renderPosts = (posts, seenPostsIds, elements, i18n) => {
@@ -152,27 +148,19 @@ const renderFeeds = (feeds, elements, i18n) => {
   feedsCard.append(feedsCardBody, feedsList);
 };
 
-const renderError = (error, elements, i18n) => {
-  console.log(error, !isEmpty(error), i18n.t(error));
-  if (!isEmpty(error)) {
-    const { feedback } = elements;
-    feedback.textContent = i18n.t(error);
-  }
-};
-
-const renderForm = (formState, elements) => {
+const renderForm = (formState, formError, elements, i18n) => {
   switch (formState) {
     case mappingFormState.valid:
       break;
     case mappingFormState.invalid:
-      showInvalidInputField(elements);
+      showInvalidInputField(formError, elements, i18n);
       break;
     case mappingFormState.processing:
       clearInputField(elements);
       blockUI(elements);
       break;
     case mappingFormState.filling:
-      showProcessingInputField('form', elements);
+      showFillingInputField(elements);
       break;
     default:
       unblockUI(elements);
@@ -181,13 +169,13 @@ const renderForm = (formState, elements) => {
   }
 };
 
-const renderLoading = (loadingState, elements, i18n) => {
+const renderLoading = (loadingState, loadingError, elements, i18n) => {
   switch (loadingState) {
     case mappingLoadingState.processing:
-      showProcessingInputField('loading', elements, i18n);
+      showLoadingInputField(elements, i18n);
       break;
     case mappingLoadingState.failed:
-      showInvalidInputField(elements);
+      showInvalidInputField(loadingError, elements, i18n);
       break;
     case mappingLoadingState.done:
       showValidInputField(elements, i18n);
@@ -215,6 +203,6 @@ const renderSeenPost = (seenPostsIds, elements) => {
 };
 
 export {
-  renderForm, renderLoading, renderError,
+  renderForm, renderLoading,
   renderFeeds, renderPosts, renderModal, renderSeenPost,
 };

@@ -24,18 +24,19 @@ const runApp = (state, elements) => {
         updatePosts(state, formData.get('url'));
       })
       .catch((err) => {
-        state.form.state = mappingFormState.invalid;
         handleError(err, state);
+        state.form.state = mappingFormState.invalid;
       })
       .finally(() => {
         state.form.state = mappingFormState.filling;
       });
-    updatePostsByTimer(state);
   });
 
   [...elements.closeButtons, elements.modal].forEach((btn) => {
     btn.addEventListener('click', (e) => {
-      if ([...e.target.classList].includes('modal') || e.target.dataset.bsDismiss) {
+      if (e.target.id === 'modal' || e.target.dataset.bsDismiss) {
+        console.log(e.target, e.target.id, e.target.dataset.bsDismiss);
+        console.log(elements.body);
         state.ui.modal = {
           state: mappingModalState.closed,
           activePost: null,
@@ -60,6 +61,8 @@ const runApp = (state, elements) => {
       state.ui.seenPostsIds.push(postId);
     }
   });
+
+  updatePostsByTimer(state);
 };
 
 export default () => {
