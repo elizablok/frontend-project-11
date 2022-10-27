@@ -1,4 +1,6 @@
-import { isEmpty, uniqueId } from 'lodash';
+import {
+  isEmpty, uniqueId, differenceWith,
+} from 'lodash';
 import parse from './parser.js';
 import proxify from './proxy.js';
 import fetch from './fetcher.js';
@@ -50,8 +52,9 @@ const updatePostsByTimer = (state) => {
     return fetch(proxifiedUrl)
       .then((data) => {
         const feedData = parse(data);
-        const postsLinks = state.data.posts.map(({ link }) => link);
-        const newPostsData = feedData.posts.filter((post) => !postsLinks.includes(post.link));
+        const newPostsData = differenceWith(
+          feedData.posts, state.data.posts, (fresh, old) => fresh.link === old.link,
+        );
         if (!isEmpty(newPostsData)) {
           feedData.posts = newPostsData;
           const newPosts = createPosts(feedData);
@@ -59,7 +62,7 @@ const updatePostsByTimer = (state) => {
           state.data.posts.unshift(...newPosts);
         }
       })
-      .catch((e) => console.log(e));
+      .catch((e) => console.error(e));
   });
   Promise.all(promises)
     .finally(() => setTimeout(() => updatePostsByTimer(state), 5000));

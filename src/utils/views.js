@@ -1,5 +1,5 @@
 import { isEmpty, last } from 'lodash';
-import { mappingFormState, mappingLoadingState, mappingModalState } from './mappingStates.js';
+import { mappingFormState, mappingLoadingState } from './mappingStates.js';
 
 const blockUI = (elements) => {
   const { input, submitButton } = elements;
@@ -9,34 +9,19 @@ const blockUI = (elements) => {
 
 const unblockUI = (elements) => {
   const { submitButton, input } = elements;
-  submitButton.disabled = false;
+  submitButton.removeAttribute('disabled');
   input.readOnly = false;
 };
 
 const openModal = (post, elements) => {
-  elements.body.classList.add('modal-open');
-  elements.body.setAttribute('style', 'overflow: hidden; padding-right: 15px;');
-
-  elements.modal.classList.add('show');
-  elements.modal.style = 'display: block;';
-  elements.modal.removeAttribute('aria-hidden');
-  elements.modal.setAttribute('aria-modal', 'true');
-  elements.modal.setAttribute('role', 'dialog');
-
   elements.modalTitle.textContent = post.title;
   elements.modalBody.innerHTML = post.description;
   elements.readinFullButton.setAttribute('href', post.link);
+  elements.modal.modal('show');
 };
 
 const closeModal = (elements) => {
-  elements.body.classList.remove('modal-open');
-  elements.body.removeAttribute('style');
-
-  elements.modal.classList.remove('show');
-  elements.modal.style = 'display: none;';
-  elements.modal.removeAttribute('aria-modal');
-  elements.modal.setAttribute('aria-hidden', 'true');
-  elements.modal.removeAttribute('role');
+  elements.modal.modal('hide');
 };
 
 const clearInputField = (elements) => {
@@ -77,7 +62,10 @@ const showLoadingInputField = (elements, i18n) => {
   feedback.textContent = i18n.t('loading.feedback.process');
 };
 
-const renderPosts = (posts, seenPostsIds, elements, i18n) => {
+const renderPosts = (state, elements, i18n) => {
+  console.log('posts');
+  const { posts } = state.data;
+  const { seenPostsIds } = state.ui;
   const card = document.createElement('div');
   card.classList.add('card', 'border-0');
   elements.postsContainer.replaceChildren(card);
@@ -117,7 +105,9 @@ const renderPosts = (posts, seenPostsIds, elements, i18n) => {
   card.append(cardBody, postsList);
 };
 
-const renderFeeds = (feeds, elements, i18n) => {
+const renderFeeds = (state, elements, i18n) => {
+  console.log('feeds');
+  const { feeds } = state.data;
   const feedsCard = document.createElement('div');
   feedsCard.classList.add('card', 'border-0');
   elements.feedsContainer.replaceChildren(feedsCard);
@@ -148,7 +138,9 @@ const renderFeeds = (feeds, elements, i18n) => {
   feedsCard.append(feedsCardBody, feedsList);
 };
 
-const renderForm = (formState, formError, elements, i18n) => {
+const renderForm = (state, elements, i18n) => {
+  const formState = state.form.state;
+  const formError = state.form.error;
   switch (formState) {
     case mappingFormState.valid:
       break;
@@ -169,7 +161,9 @@ const renderForm = (formState, formError, elements, i18n) => {
   }
 };
 
-const renderLoading = (loadingState, loadingError, elements, i18n) => {
+const renderLoading = (state, elements, i18n) => {
+  const loadingState = state.loading.state;
+  const loadingError = state.loading.error;
   switch (loadingState) {
     case mappingLoadingState.processing:
       showLoadingInputField(elements, i18n);
@@ -187,15 +181,18 @@ const renderLoading = (loadingState, loadingError, elements, i18n) => {
   }
 };
 
-const renderModal = (modals, elements) => {
-  if (modals.state === mappingModalState.open) {
-    openModal(modals.activePost, elements);
-  } else if (modals.state === mappingModalState.closed) {
+const renderModal = (state, elements) => {
+  const { activePostId } = state.ui.modal;
+  if (activePostId !== null) {
+    const activePost = state.data.posts.find((post) => post.id === activePostId);
+    openModal(activePost, elements);
+  } else {
     closeModal(elements);
   }
 };
 
-const renderSeenPost = (seenPostsIds, elements) => {
+const renderSeenPost = (state, elements) => {
+  const { seenPostsIds } = state.ui;
   const postId = last(seenPostsIds);
   const postA = elements.postsContainer.querySelector(`a[data-id="${postId}"]`);
   postA.classList.remove('fw-bold');

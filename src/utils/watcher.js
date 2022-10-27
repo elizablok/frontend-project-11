@@ -4,30 +4,30 @@ import {
   renderFeeds, renderPosts, renderModal, renderSeenPost,
 } from './views.js';
 
-export default (state, elements, i18n) => onChange(state, (path, value) => {
+export default (state, elements, i18n) => onChange(state, (path) => {
   switch (path) {
     case 'form.state':
-      renderForm(value, state.form.error, elements, i18n);
+      renderForm(state, elements, i18n);
       break;
 
     case 'loading.state':
-      renderLoading(value, state.loading.error, elements, i18n);
+      renderLoading(state, elements, i18n);
       break;
 
     case 'data.feeds':
-      renderFeeds(value, elements, i18n);
+      renderFeeds(state, elements, i18n);
       break;
 
     case 'data.posts':
-      renderPosts(value, state.ui.seenPostsIds, elements, i18n);
+      renderPosts(state, elements, i18n);
       break;
 
     case 'ui.modal':
-      renderModal(value, elements);
+      renderModal(state, elements);
       break;
 
     case 'ui.seenPostsIds':
-      renderSeenPost(value, elements);
+      renderSeenPost(state, elements);
       break;
 
     default:

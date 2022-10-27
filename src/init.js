@@ -3,7 +3,9 @@ import * as yup from 'yup';
 import resources from './locales/index.js';
 import watch from './utils/watcher.js';
 import validate from './utils/validator.js';
-import { mappingLoadingState, mappingFormState, mappingModalState } from './utils/mappingStates.js';
+import {
+  mappingLoadingState, mappingFormState,
+} from './utils/mappingStates.js';
 import handleError from './utils/cathers.js';
 import { updatePosts, updatePostsByTimer } from './utils/updaters.js';
 
@@ -35,11 +37,8 @@ const runApp = (state, elements) => {
   [...elements.closeButtons, elements.modal].forEach((btn) => {
     btn.addEventListener('click', (e) => {
       if (e.target.id === 'modal' || e.target.dataset.bsDismiss) {
-        console.log(e.target, e.target.id, e.target.dataset.bsDismiss);
-        console.log(elements.body);
         state.ui.modal = {
-          state: mappingModalState.closed,
-          activePost: null,
+          activePostId: null,
         };
       }
     });
@@ -47,18 +46,15 @@ const runApp = (state, elements) => {
 
   elements.postsContainer.addEventListener('click', (e) => {
     const postButton = e.target;
-    const postId = postButton.dataset.id;
-    if (!postId) return;
-    const activePost = state.data.posts.find(({ id }) => id === postId);
+    const activePostId = postButton.dataset.id;
+    if (!activePostId) return;
 
     state.ui.modal = {
-      state: mappingModalState.open,
-      activePost,
+      activePostId,
     };
 
-    const { seenPostsIds } = state.ui;
-    if (!seenPostsIds.includes(postId)) {
-      state.ui.seenPostsIds.push(postId);
+    if (!new Set(state.ui.seenPostsIds).has(activePostId)) {
+      state.ui.seenPostsIds.push(activePostId);
     }
   });
 
@@ -99,8 +95,7 @@ export default () => {
         ui: {
           seenPostsIds: [],
           modal: {
-            state: mappingModalState.initial,
-            activePost: null,
+            activePostId: null,
           },
         },
       };
@@ -124,5 +119,5 @@ export default () => {
 
       runApp(watchedState, elements);
     })
-    .catch((e) => console.log(e));
+    .catch((e) => console.error(e));
 };

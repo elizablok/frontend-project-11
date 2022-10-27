@@ -13,10 +13,4 @@ const mappingLoadingState = {
   failed: 'failed',
 };
 
-const mappingModalState = {
-  initial: 'closed',
-  open: 'open',
-  closed: 'closed',
-};
-
-export { mappingFormState, mappingLoadingState, mappingModalState };
+export { mappingFormState, mappingLoadingState };
