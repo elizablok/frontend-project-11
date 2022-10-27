@@ -17,11 +17,6 @@ const openModal = (post, elements) => {
   elements.modalTitle.textContent = post.title;
   elements.modalBody.innerHTML = post.description;
   elements.readinFullButton.setAttribute('href', post.link);
-  elements.modal.modal('show');
-};
-
-const closeModal = (elements) => {
-  elements.modal.modal('hide');
 };
 
 const clearInputField = (elements) => {
@@ -63,7 +58,6 @@ const showLoadingInputField = (elements, i18n) => {
 };
 
 const renderPosts = (state, elements, i18n) => {
-  console.log('posts');
   const { posts } = state.data;
   const { seenPostsIds } = state.ui;
   const card = document.createElement('div');
@@ -106,7 +100,6 @@ const renderPosts = (state, elements, i18n) => {
 };
 
 const renderFeeds = (state, elements, i18n) => {
-  console.log('feeds');
   const { feeds } = state.data;
   const feedsCard = document.createElement('div');
   feedsCard.classList.add('card', 'border-0');
@@ -186,8 +179,6 @@ const renderModal = (state, elements) => {
   if (activePostId !== null) {
     const activePost = state.data.posts.find((post) => post.id === activePostId);
     openModal(activePost, elements);
-  } else {
-    closeModal(elements);
   }
 };
 
