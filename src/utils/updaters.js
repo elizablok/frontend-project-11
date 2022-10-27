@@ -52,9 +52,9 @@ const updatePostsByTimer = (state) => {
     return fetch(proxifiedUrl)
       .then((data) => {
         const feedData = parse(data);
-        const newPostsData = differenceWith(
-          feedData.posts, state.data.posts, (fresh, old) => fresh.link === old.link,
-        );
+        const old = state.data.posts;
+        const fresh = feedData.posts;
+        const newPostsData = differenceWith(fresh, old, (a, b) => a.link === b.link);
         if (!isEmpty(newPostsData)) {
           feedData.posts = newPostsData;
           const newPosts = createPosts(feedData);
