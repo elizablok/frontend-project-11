@@ -1,7 +1,7 @@
 {
-  "name": "@hexlet/code",
+  "name": "rss-aggregator",
   "version": "1.0.0",
-  "description": "Hexlet project lvl 3. RSS aggregator",
+  "description": "RSS Aggregator",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -13,14 +13,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/elizablok/frontend-project-11.git"
+    "url": "git+https://github.com/elizablok/rss-aggregator.git"
   },
   "author": "eliza",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/elizablok/frontend-project-11/issues"
+    "url": "https://github.com/elizablok/rss-aggregator/issues"
   },
-  "homepage": "https://github.com/elizablok/frontend-project-11#readme",
+  "homepage": "https://github.com/elizablok/rss-aggregator#readme",
   "devDependencies": {
     "@babel/core": "^7.15.5",
     "@babel/eslint-parser": "^7.15.4",
