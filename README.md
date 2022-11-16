@@ -5,7 +5,7 @@ This project is a service that allows you to add RSS feeds and read their posts 
 
 ### Features:
 * Validating the input and data;
-* Friendly error output;
+* Good error output;
 * Check for an update of the added feeds every 5 seconds;
 * Marking the seen publications.
 
